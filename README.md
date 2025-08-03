@@ -63,7 +63,7 @@ A React-based application for designing and analyzing COBIT governance systems w
 
 ## Live Demo
 
-Visit: https://m-nimazuddin-akhyar.github.io/cobit-governance-system-design-tool
+Visit: https://mnakhyar.github.io/cobit-governance-system-design-tool
 
 ## Technologies Used
 
