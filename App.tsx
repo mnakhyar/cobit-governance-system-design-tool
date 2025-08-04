@@ -12,6 +12,7 @@ import SummaryStep3Page from './pages/SummaryStep3Page';
 import CanvasPage from './pages/CanvasPage';
 import { apiService, Design } from './services/apiService';
 
+
 function App() {
   const [userInputs, setUserInputs] = useState<UserInputs>(() => {
     // Initialize inputs with default values from constants
@@ -76,28 +77,28 @@ function App() {
             )}
           </button>
 
-          <main className={`flex-1 p-6 sm:p-8 ${isSidebarVisible ? 'border-l border-gray-200' : ''}`}>
-             <Routes>
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/instructions" element={<InstructionPage />} />
-                <Route 
-                  path="/design-factor/:factorId" 
-                  element={<DesignFactorPage allInputs={userInputs} onInputChange={setUserInputs} />} 
-                />
-                <Route 
-                  path="/summary/step2" 
-                  element={<SummaryStep2Page allInputs={userInputs} />} 
-                />
-                <Route 
-                  path="/summary/step3" 
-                  element={<SummaryStep3Page allInputs={userInputs} />} 
-                />
-                <Route 
-                  path="/canvas" 
-                  element={<CanvasPage allInputs={userInputs} />} 
-                />
-              </Routes>
-          </main>
+                      <main className={`flex-1 p-6 sm:p-8 ${isSidebarVisible ? 'border-l border-gray-200' : ''}`}>
+               <Routes>
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/instructions" element={<InstructionPage />} />
+                  <Route 
+                    path="/design-factor/:factorId" 
+                    element={<DesignFactorPage allInputs={userInputs} onInputChange={setUserInputs} />} 
+                  />
+                  <Route 
+                    path="/summary/step2" 
+                    element={<SummaryStep2Page allInputs={userInputs} />} 
+                  />
+                  <Route 
+                    path="/summary/step3" 
+                    element={<SummaryStep3Page allInputs={userInputs} />} 
+                  />
+                  <Route 
+                    path="/canvas" 
+                    element={<CanvasPage allInputs={userInputs} />} 
+                  />
+                </Routes>
+            </main>
         </div>
       </div>
     </div>

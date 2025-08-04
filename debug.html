@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Debug Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div class="min-h-screen bg-blue-50 flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-lg">
+            <h1 class="text-2xl font-bold text-blue-600 mb-4">Debug Test</h1>
+            <p class="text-gray-600">If you can see this, the basic setup is working.</p>
+            <div id="test-output" class="mt-4 p-4 bg-gray-100 rounded">
+                <p>JavaScript Test: <span id="js-test">Loading...</span></p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('js-test').textContent = 'JavaScript is working!';
+        console.log('Debug test loaded successfully');
+    </script>
+</body>
+</html> 
