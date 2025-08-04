@@ -1,14 +1,16 @@
 
-import React, { useState, useMemo } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Routes, Route, useLocation, useSearchParams } from 'react-router-dom';
 import { UserInputs, DesignFactorOption } from './types';
 import { DESIGN_FACTORS } from './constants/cobitData';
 import Sidebar from './components/Sidebar';
+import LandingPage from './components/LandingPage';
 import InstructionPage from './pages/InstructionPage';
 import DesignFactorPage from './pages/DesignFactorPage';
 import SummaryStep2Page from './pages/SummaryStep2Page';
 import SummaryStep3Page from './pages/SummaryStep3Page';
 import CanvasPage from './pages/CanvasPage';
+import { apiService, Design } from './services/apiService';
 
 function App() {
   const [userInputs, setUserInputs] = useState<UserInputs>(() => {
@@ -35,6 +37,10 @@ function App() {
 
   // State to manage sidebar visibility
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  
+  // State for current design
+  const [currentDesign, setCurrentDesign] = useState<Design | null>(null);
+  const [loading, setLoading] = useState(false);
 
   return (
     <div className="bg-gray-100 min-h-screen font-sans">
@@ -72,7 +78,8 @@ function App() {
 
           <main className={`flex-1 p-6 sm:p-8 ${isSidebarVisible ? 'border-l border-gray-200' : ''}`}>
              <Routes>
-                <Route path="/" element={<InstructionPage />} />
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/instructions" element={<InstructionPage />} />
                 <Route 
                   path="/design-factor/:factorId" 
                   element={<DesignFactorPage allInputs={userInputs} onInputChange={setUserInputs} />} 

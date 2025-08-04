@@ -1,10 +1,13 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { UserInputs, ScoreResult } from '../types';
 import { GOVERNANCE_OBJECTIVES, DESIGN_FACTORS } from '../constants/cobitData';
 import { calculateScoresForSingleFactor, calculateSummaryStep2, calculateSummaryStep3, calculateSuggestedCapabilityLevel } from '../services/cobitCalculator';
+import { apiService, Design } from '../services/apiService';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
+import SaveDesignButton from '../components/SaveDesignButton';
+import DesignStatusBar from '../components/DesignStatusBar';
 
 interface CanvasDataRow {
     id: string;
@@ -70,6 +73,9 @@ const getRelativeImportanceColor = (value: number) => {
 const CanvasPage: React.FC<{ allInputs: UserInputs }> = ({ allInputs }) => {
     const [canvasInputs, setCanvasInputs] = useState<CanvasInputs>({});
     const [editingCell, setEditingCell] = useState<string | null>(null);
+    const [currentDesign, setCurrentDesign] = useState<Design | null>(null);
+    const [isModified, setIsModified] = useState(false);
+    const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
     const defaultWeights = useMemo(() => DESIGN_FACTORS.reduce((acc, df) => {
         acc[df.id] = 1;
@@ -78,15 +84,14 @@ const CanvasPage: React.FC<{ allInputs: UserInputs }> = ({ allInputs }) => {
     
     const [factorWeights, setFactorWeights] = useState<{[key:string]: number}>(defaultWeights);
 
-    const handleWeightChange = (factorId: string, value: string) => {
-        const numericValue = value === '' ? 1 : parseFloat(value);
-        setFactorWeights(prev => ({
-            ...prev,
-            [factorId]: isNaN(numericValue) ? 1 : numericValue,
-        }));
+    const handleSaveSuccess = (savedDesign: Design) => {
+        setCurrentDesign(savedDesign);
+        setIsModified(false);
+        setLastSaved(new Date());
     };
 
     const handleInputChange = (objectiveId: string, field: keyof CanvasInputs[string], value: string | number) => {
+        setIsModified(true);
         const numericValue = typeof value === 'string' ? parseFloat(value) : value;
         
         setCanvasInputs(prev => ({
@@ -95,6 +100,14 @@ const CanvasPage: React.FC<{ allInputs: UserInputs }> = ({ allInputs }) => {
                 ...prev[objectiveId],
                 [field]: typeof value === 'string' && field.includes('Reason') ? value : (isNaN(numericValue) ? undefined : numericValue)
             }
+        }));
+    };
+
+    const handleWeightChange = (factorId: string, value: string) => {
+        const numericValue = value === '' ? 1 : parseFloat(value);
+        setFactorWeights(prev => ({
+            ...prev,
+            [factorId]: isNaN(numericValue) ? 1 : numericValue,
         }));
     };
 
@@ -158,9 +171,28 @@ const CanvasPage: React.FC<{ allInputs: UserInputs }> = ({ allInputs }) => {
                     <h2 className="text-3xl font-bold text-gray-800">Governance Design Canvas</h2>
                     <p className="mt-2 text-lg text-gray-600">A comprehensive worksheet to finalize the governance system design.</p>
                 </div>
-                 <Button onClick={handlePrint} variant="primary">
-                    &#x1F4BE; Save as PDF / Print Report
-                </Button>
+                <div className="flex items-center space-x-4">
+                    <SaveDesignButton
+                        designData={{
+                            context: {
+                                allInputs: allInputs,
+                                factorWeights: factorWeights,
+                                canvasInputs: canvasInputs
+                            },
+                            canvasData: canvasData,
+                            results: {
+                                step2Cols,
+                                step3Cols,
+                                step4Cols
+                            }
+                        }}
+                        currentDesignId={currentDesign?._id}
+                        onSaveSuccess={handleSaveSuccess}
+                    />
+                    <Button onClick={handlePrint} variant="primary">
+                        &#x1F4BE; Save as PDF / Print Report
+                    </Button>
+                </div>
             </div>
             <div className="mt-8 card-print-avoid">
                 <Card title="Consolidated Design Matrix" description="Scroll horizontally and vertically to view all data. Interactive fields in Step 4 allow for final adjustments.">
@@ -272,6 +304,14 @@ const CanvasPage: React.FC<{ allInputs: UserInputs }> = ({ allInputs }) => {
                     </div>
                 </Card>
             </div>
+
+            {/* Status Bar */}
+            <DesignStatusBar
+                currentDesign={currentDesign}
+                isModified={isModified}
+                lastSaved={lastSaved || undefined}
+                className="mt-8"
+            />
         </div>
     );
 };

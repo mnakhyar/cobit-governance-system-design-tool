@@ -1,16 +1,19 @@
 
 
-import React, { useMemo } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import React, { useMemo, useState, useEffect } from 'react';
+import { useParams, Navigate, useSearchParams } from 'react-router-dom';
 import { UserInputs, DesignFactor, ScoreResult } from '../types';
 import { DESIGN_FACTORS, DESIGN_FACTOR_BASELINES } from '../constants/cobitData';
 import { calculateScoresForSingleFactor, calculateSummaryStatistics } from '../services/cobitCalculator';
+import { apiService, Design } from '../services/apiService';
 import Card from '../components/common/Card';
 import Slider from '../components/common/Slider';
 import PercentageGroup from '../components/PercentageGroup';
 import ResultsDisplay from '../components/ResultsDisplay';
 import InputVisualizer from '../components/InputVisualizer';
 import SummaryStatistics from '../components/SummaryStatistics';
+import SaveDesignButton from '../components/SaveDesignButton';
+import DesignStatusBar from '../components/DesignStatusBar';
 
 // Helper functions for Risk Profile colors and labels
 const getImpactLikelihoodColor = (value: number): string => {
@@ -67,7 +70,6 @@ const RiskLegend = () => (
     </div>
 );
 
-
 interface DesignFactorPageProps {
     allInputs: UserInputs;
     onInputChange: React.Dispatch<React.SetStateAction<UserInputs>>;
@@ -75,9 +77,64 @@ interface DesignFactorPageProps {
 
 const DesignFactorPage: React.FC<DesignFactorPageProps> = ({ allInputs, onInputChange }) => {
     const { factorId } = useParams<{ factorId: string }>();
-    const factor = DESIGN_FACTORS.find(df => df.id === factorId);
+    const [searchParams] = useSearchParams();
+    const [currentDesign, setCurrentDesign] = useState<Design | null>(null);
+    const [isModified, setIsModified] = useState(false);
+    const [lastSaved, setLastSaved] = useState<Date | null>(null);
+    const [loading, setLoading] = useState(false);
 
+    const factor = DESIGN_FACTORS.find(df => df.id === factorId);
     const factorInputs = allInputs[factorId!] || {};
+
+    // Load design if ID is provided in URL
+    useEffect(() => {
+        const loadDesignId = searchParams.get('load');
+        if (loadDesignId) {
+            loadDesign(loadDesignId);
+        }
+    }, [searchParams]);
+
+
+
+    const loadDesign = async (designId: string) => {
+        try {
+            setLoading(true);
+            const design = await apiService.getDesign(designId);
+            setCurrentDesign(design);
+            
+            // Load the design data into inputs
+            if (design.context) {
+                // You can implement loading logic here
+                console.log('Loading design:', design);
+            }
+            
+            setIsModified(false);
+        } catch (error) {
+            console.error('Failed to load design:', error);
+            alert('Failed to load design');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSaveSuccess = (savedDesign: Design) => {
+        setCurrentDesign(savedDesign);
+        setIsModified(false);
+        setLastSaved(new Date());
+    };
+
+    const handleInputChange = (itemId: string, value: number | { impact: number, likelihood: number } | { [key: string]: number }) => {
+        setIsModified(true);
+        onInputChange(prev => {
+            let newFactorInputs = { ...prev[factor.id] };
+            if (factor.type === 'percentage') {
+                 newFactorInputs = value as {[key:string]:number};
+            } else {
+                newFactorInputs[itemId] = value as any;
+            }
+            return { ...prev, [factor.id]: newFactorInputs };
+        });
+    };
 
     const results = useMemo(() => {
         if (!factorId || !allInputs) return [];
@@ -95,18 +152,6 @@ const DesignFactorPage: React.FC<DesignFactorPageProps> = ({ allInputs, onInputC
     if (!factor) {
         return <Navigate to="/" />;
     }
-
-    const handleInputChange = (itemId: string, value: number | { impact: number, likelihood: number } | { [key: string]: number }) => {
-        onInputChange(prev => {
-            let newFactorInputs = { ...prev[factor.id] };
-            if (factor.type === 'percentage') {
-                 newFactorInputs = value as {[key:string]:number};
-            } else {
-                newFactorInputs[itemId] = value as any;
-            }
-            return { ...prev, [factor.id]: newFactorInputs };
-        });
-    };
 
     const renderInputs = () => {
         const items = factor.archetypes || factor.categories || factor.riskScenarios || factor.issues || [];
@@ -211,7 +256,7 @@ const DesignFactorPage: React.FC<DesignFactorPageProps> = ({ allInputs, onInputC
             default:
                 return <p>Input type not configured.</p>;
         }
-    }
+    };
 
     const renderInputSection = () => {
         if (factor.id === 'df3') {
@@ -241,7 +286,33 @@ const DesignFactorPage: React.FC<DesignFactorPageProps> = ({ allInputs, onInputC
 
     return (
         <div>
-            <h2 className="text-3xl font-bold text-gray-800">{factor.name}</h2>
+            <div className="flex items-center justify-between mb-6">
+                <h2 className="text-3xl font-bold text-gray-800">{factor.name}</h2>
+                
+                <div className="flex items-center space-x-4">
+                    {loading && (
+                        <div className="flex items-center space-x-2 text-gray-600">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                            <span>Loading...</span>
+                        </div>
+                    )}
+                    
+                    <SaveDesignButton
+                        designData={{
+                            context: {
+                                currentFactor: factorId,
+                                factorInputs: factorInputs,
+                                allInputs: allInputs
+                            },
+                            results: results,
+                            summaryStats: summaryStats
+                        }}
+                        currentDesignId={currentDesign?._id}
+                        onSaveSuccess={handleSaveSuccess}
+                        className="ml-4"
+                    />
+                </div>
+            </div>
             
             <div className="mt-6">
                 {renderInputSection()}
@@ -261,6 +332,14 @@ const DesignFactorPage: React.FC<DesignFactorPageProps> = ({ allInputs, onInputC
                     factorId={factorId!}
                 />
             </div>
+
+            {/* Status Bar */}
+            <DesignStatusBar
+                currentDesign={currentDesign}
+                isModified={isModified}
+                lastSaved={lastSaved || undefined}
+                className="mt-8"
+            />
         </div>
     );
 };
