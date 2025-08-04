@@ -6,7 +6,7 @@
   "homepage": "https://mnakhyar.github.io/cobit-governance-system-design-tool",
   "scripts": {
     "dev": "vite",
-    "build": "vite build --base=/cobit-governance-system-design-tool/",
+    "build": "vite build",
     "preview": "vite preview",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"

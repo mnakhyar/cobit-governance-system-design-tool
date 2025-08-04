@@ -12,9 +12,54 @@ import SummaryStep3Page from './pages/SummaryStep3Page';
 import CanvasPage from './pages/CanvasPage';
 import { apiService, Design } from './services/apiService';
 
+// Error Boundary Component
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Error caught by boundary:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-red-50 flex items-center justify-center">
+          <div className="bg-white p-8 rounded-lg shadow-lg max-w-md">
+            <h1 className="text-2xl font-bold text-red-600 mb-4">Something went wrong</h1>
+            <p className="text-gray-600 mb-4">The application encountered an error.</p>
+            <details className="text-sm text-gray-500">
+              <summary>Error Details</summary>
+              <pre className="mt-2 p-2 bg-gray-100 rounded overflow-auto">
+                {this.state.error?.toString()}
+              </pre>
+            </details>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            >
+              Reload Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 function App() {
+  console.log('App component rendering...');
+  
   const [userInputs, setUserInputs] = useState<UserInputs>(() => {
+    console.log('Initializing user inputs...');
     // Initialize inputs with default values from constants
     const initialInputs: UserInputs = {};
     DESIGN_FACTORS.forEach(factor => {
@@ -33,6 +78,7 @@ function App() {
         }
       });
     });
+    console.log('User inputs initialized:', initialInputs);
     return initialInputs;
   });
 
@@ -43,65 +89,69 @@ function App() {
   const [currentDesign, setCurrentDesign] = useState<Design | null>(null);
   const [loading, setLoading] = useState(false);
 
+  console.log('App state:', { isSidebarVisible, currentDesign, loading });
+
   return (
-    <div className="bg-gray-100 min-h-screen font-sans">
-      <header className="bg-primary shadow-md no-print">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <h1 className="text-3xl font-bold text-white tracking-tight">
-            COBIT® Governance Design Tool
-          </h1>
-        </div>
-      </header>
+    <ErrorBoundary>
+      <div className="bg-gray-100 min-h-screen font-sans">
+        <header className="bg-primary shadow-md no-print">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <h1 className="text-3xl font-bold text-white tracking-tight">
+              COBIT® Governance Design Tool
+            </h1>
+          </div>
+        </header>
 
-      <div className="flex container mx-auto bg-white shadow-xl mt-[-10px] rounded-t-lg">
-        {/* Conditionally render the sidebar */}
-        {isSidebarVisible && <Sidebar />}
-        
-        {/* Wrapper for main content and toggle button */}
-        <div className="relative flex-1 min-w-0">
-          {/* Sidebar Toggle Button */}
-          <button
-            onClick={() => setIsSidebarVisible(!isSidebarVisible)}
-            className="absolute top-5 z-10 bg-primary text-white p-1 rounded-full shadow-lg hover:bg-primary-dark focus:outline-none focus:ring-2 ring-offset-2 ring-primary-light no-print"
-            style={{ left: '-16px' }}
-            aria-label={isSidebarVisible ? "Hide sidebar" : "Show sidebar"}
-          >
-            {isSidebarVisible ? (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-              </svg>
-            )}
-          </button>
+        <div className="flex container mx-auto bg-white shadow-xl mt-[-10px] rounded-t-lg">
+          {/* Conditionally render the sidebar */}
+          {isSidebarVisible && <Sidebar />}
+          
+          {/* Wrapper for main content and toggle button */}
+          <div className="relative flex-1 min-w-0">
+            {/* Sidebar Toggle Button */}
+            <button
+              onClick={() => setIsSidebarVisible(!isSidebarVisible)}
+              className="absolute top-5 z-10 bg-primary text-white p-1 rounded-full shadow-lg hover:bg-primary-dark focus:outline-none focus:ring-2 ring-offset-2 ring-primary-light no-print"
+              style={{ left: '-16px' }}
+              aria-label={isSidebarVisible ? "Hide sidebar" : "Show sidebar"}
+            >
+              {isSidebarVisible ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                </svg>
+              )}
+            </button>
 
-                      <main className={`flex-1 p-6 sm:p-8 ${isSidebarVisible ? 'border-l border-gray-200' : ''}`}>
-               <Routes>
-                  <Route path="/" element={<LandingPage />} />
-                  <Route path="/instructions" element={<InstructionPage />} />
-                  <Route 
-                    path="/design-factor/:factorId" 
-                    element={<DesignFactorPage allInputs={userInputs} onInputChange={setUserInputs} />} 
-                  />
-                  <Route 
-                    path="/summary/step2" 
-                    element={<SummaryStep2Page allInputs={userInputs} />} 
-                  />
-                  <Route 
-                    path="/summary/step3" 
-                    element={<SummaryStep3Page allInputs={userInputs} />} 
-                  />
-                  <Route 
-                    path="/canvas" 
-                    element={<CanvasPage allInputs={userInputs} />} 
-                  />
-                </Routes>
+            <main className={`flex-1 p-6 sm:p-8 ${isSidebarVisible ? 'border-l border-gray-200' : ''}`}>
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/instructions" element={<InstructionPage />} />
+                <Route 
+                  path="/design-factor/:factorId" 
+                  element={<DesignFactorPage allInputs={userInputs} onInputChange={setUserInputs} />} 
+                />
+                <Route 
+                  path="/summary/step2" 
+                  element={<SummaryStep2Page allInputs={userInputs} />} 
+                />
+                <Route 
+                  path="/summary/step3" 
+                  element={<SummaryStep3Page allInputs={userInputs} />} 
+                />
+                <Route 
+                  path="/canvas" 
+                  element={<CanvasPage allInputs={userInputs} />} 
+                />
+              </Routes>
             </main>
+          </div>
         </div>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 }
 
