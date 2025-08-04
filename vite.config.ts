@@ -22,6 +22,10 @@ export default defineConfig(({ mode }) => {
             manualChunks: undefined
           }
         }
+      },
+      server: {
+        port: 5173,
+        host: true
       }
     };
 });
